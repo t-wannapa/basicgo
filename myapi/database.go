@@ -51,6 +51,14 @@ func getTodo() {
 }
 
 func main() {
-	insertTodo()
-	getTodo()
+	//insertTodo()
+	//getTodo()
+	db, err := sql.Open("postgres", "postgres://moftatjt:KGURjLDCcP9xjQMGEvO-13prL78g2HAA@arjuna.db.elephantsql.com:5432/moftatjt")
+	if err != nil {
+		log.Fatal("connect to database error", err)
+	}
+
+	stmt, err := db.Prepare("UPDATE todos Set")
+
+	defer db.Close()
 }
