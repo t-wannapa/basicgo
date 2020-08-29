@@ -1,91 +1,42 @@
 package main
 
 import (
+	"database/sql"
 	"log"
-	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
+	"github.com/t-wannapa/myapi/middleware"
+	"github.com/t-wannapa/myapi/task"
 )
 
 type Todo struct {
-	ID     int    `json:"id"`
+	ID     string `json:"id"`
 	Title  string `json:"title"`
 	Status string `json:"status"`
 }
 
-func helloHandler(c *gin.Context) {
-	c.String(http.StatusOK, "hi.")
-}
+var db *sql.DB
 
-var todos = map[int]*Todo{
-	1: &Todo{ID: 1, Title: "pay phone bills", Status: "active"},
-}
-
-func getTodosHandler(c *gin.Context) {
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": todos,
-	})
-}
-
-func getTodosByIdHandler(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+func init() {
+	var err error
+	db, err = sql.Open("postgres", "postgres://moftatjt:KGURjLDCcP9xjQMGEvO-13prL78g2HAA@arjuna.db.elephantsql.com:5432/moftatjt")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err)
-		return
+		log.Fatal(err)
 	}
-
-	t, ok := todos[id]
-	if !ok {
-		c.JSON(http.StatusOK, gin.H{})
-		return
-	}
-
-	c.JSON(http.StatusOK, t)
-}
-
-func createTodosHandler(c *gin.Context) {
-	t := Todo{}
-	if err := c.ShouldBindJSON(&t); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-	}
-
-	id := len(todos)
-
-	id = id + 1
-	t.ID = id
-	todos[t.ID] = &t
-
-	c.JSON(http.StatusCreated, "created todo.")
-}
-
-func authMiddleware(c *gin.Context) {
-	log.Println("start middleware")
-	authKey := c.GetHeader("Authorization")
-	if authKey != "Bearer token123" {
-		c.JSON(http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
-		c.Abort()
-		return
-	}
-	c.Next()
-	log.Println("end middleware")
 }
 
 func setupRouter() *gin.Engine {
 	r := gin.Default()
-	r.Use(authMiddleware)
-
-	r.GET("/hello", helloHandler)
-	r.GET("/todos", getTodosHandler)
-	r.GET("/todos/:id", getTodosByIdHandler)
-	r.POST("/todos", createTodosHandler)
-
+	apiV1 := r.Group("/api/v1")
+	apiV1.Use(middleware.Auth)
+	apiV1.GET("/todos", task.GetTodosHandler)
+	apiV1.GET("/todos/:id", task.GetTodoByIdHandler)
+	apiV1.POST("/todos", task.CreateTodosHandler)
+	apiV1.PUT("/todos/:id", task.UpdateTodosHandler)
+	apiV1.DELETE("/todos/:id", task.DeleteTodosHandler)
 	return r
 }
-
 func main() {
 	r := setupRouter()
 	r.Run(":1234")

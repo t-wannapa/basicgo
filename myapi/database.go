@@ -31,13 +31,13 @@ func getTodo() {
 	if err != nil {
 		log.Fatal("Connect to database error", err)
 	}
+	defer db.Close()
 
 	stmt, err := db.Prepare("SELECT id, title, status FROM todos where id=$1")
 	if err != nil {
 		log.Fatal("can'tprepare query one row statment", err)
 	}
 
-	rowId := 1
 	row := stmt.QueryRow(rowId)
 	var id int
 	var title, status string
@@ -46,19 +46,39 @@ func getTodo() {
 		log.Fatal("can't Scan row into variables", err)
 	}
 	fmt.Println("one row", id, title, status)
-
-	defer db.Close()
 }
 
-func main() {
-	//insertTodo()
-	//getTodo()
+func queryAllTodos() {
 	db, err := sql.Open("postgres", "postgres://moftatjt:KGURjLDCcP9xjQMGEvO-13prL78g2HAA@arjuna.db.elephantsql.com:5432/moftatjt")
 	if err != nil {
 		log.Fatal("connect to database error", err)
 	}
-
-	stmt, err := db.Prepare("UPDATE todos Set")
-
 	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT id, title, status FROM todos")
+	if err != nil {
+		log.Fatal("can't prepare query all todos statment", err)
+	}
+
+	rows, err := stmt.Query()
+	if err != nil {
+		log.Fatal("can't query all todos", err)
+	}
+	for rows.Next() {
+		var id int
+		var title, status string
+		err := rows.Scan(&id, &title, &status)
+		if err != nil {
+			log.Fatal("can't Scan row into variable", err)
+		}
+		fmt.Println(id, title, status)
+	}
+	fmt.Println("query all todos success")
+}
+
+func main() {
+	//insertTodo()
+	getTodo()
+	//queryAllTodos()
+
 }
