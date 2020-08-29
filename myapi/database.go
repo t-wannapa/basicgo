@@ -74,7 +74,8 @@ func queryAllTodo() {
 	if err != nil {
 		log.Fatal("connect to database error", err)
 	}
-
+	defer db.Close()
+	
 	stmt, err := db.Prepare("SELECT id, title, status FROM todos")
 	if err != nil {
 		log.Fatal("can't prepare query all todos statment", err)
