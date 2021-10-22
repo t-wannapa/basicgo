@@ -19,6 +19,7 @@ func fibonacci() func() int {
 		return sum
 	}
 }
+
 func main() {
 	f := fibonacci()
 	for i := 0; i < 20; i++ {
